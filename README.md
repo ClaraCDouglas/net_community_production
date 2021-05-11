@@ -9,5 +9,8 @@ Net_Community_Production
 Net Community Production using Bio-Argo Floats
 
 --------
+Note:
+holteandtalley package not able to be installed through environment.yml, so has to be added manually
+--------
 
 <p><small>Project based on the <a target="_blank" href="https://github.com/jbusecke/cookiecutter-science-project">cookiecutter science project template</a>.</small></p>
