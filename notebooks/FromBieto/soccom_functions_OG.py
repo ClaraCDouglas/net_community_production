@@ -9,10 +9,9 @@ import gsw
 import seawater as sw
 import os
 #from mpl_toolkits.basemap import Basemap
-from cartopy import crs
-import cartopy.feature as cfeat
+import cartopy
 import cmocean
-import pygamma
+#import pygamma
 import copy
 import glob
 import xarray as xr
@@ -117,10 +116,10 @@ class grids_one_buoy():
         self.raw["SA"] = gsw.SA_from_SP( self.raw["Salinity"], self.raw["Pressure"], self.raw["Lon"], self.raw["Lat"] ) #-10.1325
         self.raw["CT"] = gsw.CT_from_t(self.raw["SA"],self.raw["Temperature"],self.raw["Pressure"]) #-10.1325
         self.raw["Sigma_theta"]  = gsw.sigma0(self.raw["SA"],self.raw["CT"])
-        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0])
-        if not np.ma.isMaskedArray(self.raw["gamma_n"]):
-            self.raw["gamma_n"] = np.ma.array( self.raw["gamma_n"] )
-            self.raw["gamma_n"].mask = np.copy( self.raw["Sigma_theta"].mask )
+#        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0])
+#        if not np.ma.isMaskedArray(self.raw["gamma_n"]):
+#            self.raw["gamma_n"] = np.ma.array( self.raw["gamma_n"] )
+        self.raw["gamma_n"] =self.raw["Sigma_theta"] # using potential density instead of neutral density
             
         #biogeochemical
         bg_vars = ["Oxygen","OxygenSat","Nitrate","DIC_LIAR","TALK_LIAR","pCO2_LIAR","Chla_corr","POC"]
@@ -440,7 +439,7 @@ class grids_one_buoy():
             pCO2atm = np.copy(xCO2)
         self.gr["CF"] = carbon_framework(self.gr["DIC_LIAR"], self.gr["TALK_LIAR"], self.gr["SA"],\
                                          self.gr["CT"], self.gr["Pressure"], self.gr["Lon"], self.gr["Lat"], \
-                                         self.gr["AOU"], pCO2atm,self.gr["depth"], mld = self.gr["mld"], ML_zero = ML_zero)
+                                         self.gr["AOU"], pCO2atm,self.gr["depth"], self.gr["mld"], ML_zero = ML_zero)
         self.gr["CF"]["pCO2atm"] = np.copy(pCO2atm)
     
     
@@ -466,6 +465,8 @@ class grids_one_buoy():
             Tml_met[iif[-1]+1:] = Tml_met[iif[-1]]
         else:
             Tml_met = np.nanmean(Tml[iif])*np.ones(met["time"].size)
+            
+                
 
         Sml = np.copy(self.gr["SA"])
         Sml[~ismld] = np.nan
@@ -632,38 +633,27 @@ class grids_one_buoy():
 
         
         fig = plt.figure(figsize = (14,8))
-        proj = crs.LambertAzimuthalEqualArea(central_latitude=-90.0)
-        ax0 = fig.add_axes([0.10,0.67,0.3,0.3], projection = proj)
-        ax0.gridlines(draw_labels=False)
-        ax0.set_extent([-180, 180, -90, -25], crs.PlateCarree())
-        ax0.stock_img()
-        
-        cc = ax0.scatter(self.raw["Lon"], self.raw["Lat"], 20, c = self.raw["date"],transform = crs.PlateCarree(),)#-self.raw["date"][0])
-        loc = mdates.AutoDateLocator()
-        fig.colorbar(cc, ticks=loc,
-                 format=mdates.AutoDateFormatter(loc))
-
-        """
         ax0 = fig.add_axes([0.10,0.67,0.3,0.3])
+        
         width = 15e6; lon_0 = 0; lat_0 = -90
-        m1 = Basemap(width=width,height=width,projection='aeqd',
-                     lat_0=lat_0,lon_0=lon_0)
-        m1.drawcoastlines()
-        m1.fillcontinents()
-        m1.drawmapboundary(fill_color='skyblue')
-        m1.fillcontinents(color='#cc9966',lake_color='#99ffff')
-        m1.drawparallels(np.arange(-80,-20,10),labels=[1,0,0,0])
-        m1.drawmeridians(np.arange(-180,180,30),labels=[0,0,0,1])
-        x,y = m1( self.raw["Lon"], self.raw["Lat"])
+#        m1 = Basemap(width=width,height=width,projection='aeqd',
+#                     lat_0=lat_0,lon_0=lon_0)
+#        m1.drawcoastlines()
+#        m1.fillcontinents()
+#        m1.drawmapboundary(fill_color='skyblue')
+#        m1.fillcontinents(color='#cc9966',lake_color='#99ffff')
+#        m1.drawparallels(np.arange(-80,-20,10),labels=[1,0,0,0])
+#        m1.drawmeridians(np.arange(-180,180,30),labels=[0,0,0,1])
+#        x,y = m1( self.raw["Lon"], self.raw["Lat"])
         #plt.scatter(x,y,10,T_gr[5,:])
         #plt.plot(x,y,color = "crimson")
-        cc = plt.scatter(x,y,20, c = self.raw["date"])#-self.raw["date"][0])
-        loc = mdates.AutoDateLocator()
-        fig.colorbar(cc, ticks=loc,
-                 format=mdates.AutoDateFormatter(loc))
+#        cc = plt.scatter(x,y,20, c = self.raw["date"])#-self.raw["date"][0])
+#        loc = mdates.AutoDateLocator()
+#        fig.colorbar(cc, ticks=loc,
+#                format=mdates.AutoDateFormatter(loc))
         #cb = fig.colorbar(cc)
         #cb.set_label("Survey day")
-        """
+
 
         ax1 = fig.add_axes([0.07,0.35,0.47,0.27])
         cfT=ax1.contourf(self.gr["date"], self.gr["depth"], self.gr["CT"],20, cmap = cmocean.cm.thermal)
@@ -683,7 +673,7 @@ class grids_one_buoy():
         ax1.set_ylim(yl)
         ax1.set_ylabel("Depth [m]")
         ax1.set_xticklabels([])
-        #ax1.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
+        #ax1.xaxis.set_major_formatter(mdates.AutoDateFormatter())
 
         ax2 = fig.add_axes([0.07,0.05,0.47,0.27])
         cfT=ax2.contourf(self.gr["date"], self.gr["depth"], self.gr["SA"],20, cmap = cmocean.cm.haline)
@@ -694,7 +684,7 @@ class grids_one_buoy():
         ax2.annotate("$S_A$", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8) )
         ax2.set_ylim(yl)
         ax2.set_ylabel("Depth [m]")
-        ax2.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
+        ax2.xaxis.set_major_formatter(mdates.AutoDateFormatter("%Y-%b-%d"))
 
         """
         ax3 = fig.add_axes([0.54,0.65,0.47,0.27])
@@ -748,7 +738,7 @@ class grids_one_buoy():
             ax5.annotate("DIC [$\\mu$ mol kg$^{-1}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
             ax5.set_ylim(yl)
             ax5.set_yticklabels([])
-            ax5.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
+            ax5.xaxis.set_major_formatter(mdates.AutoDateFormatter("%Y-%b-%d"))
         filename = "float_maps/%s_map.png"%(self.raw["code"])
         if saves:
             fig.savefig(filename)
@@ -990,7 +980,7 @@ def moving_average(x,n, window = "flat"):
         cx[i] = np.sum(x[ii[kk]]*ww[kk])/np.sum(ww[kk])
     return cx
 
-#time conversion
+
 def convert_time_to_date(time):
      date = [datetime.datetime.fromordinal(int(time0)) + datetime.timedelta(time0%1) for time0 in  time] 
      return date
@@ -1171,7 +1161,7 @@ def Schmidt_number(T, gas = "CO2"):
 ##
 ## Carbon framework
 ##
-def carbon_framework(DIC, TALK, SA, CT, pres, lon, lat, AOU, pCO2, depth, **kargs):
+def carbon_framework(DIC, TALK, SA, CT, pres, lon, lat, AOU, pCO2, depth, mld,**kargs):
     import PyCO2SYS as pyco2
     if "ML_zero" in kargs:
         ML_zero = kargs["ML_zero"]
@@ -1215,7 +1205,12 @@ def carbon_framework(DIC, TALK, SA, CT, pres, lon, lat, AOU, pCO2, depth, **karg
     results = pyco2.sys(TALK, pCO2, 1,4, salinity = SP, temperature = PT)
     CF["DICsat_talk"] = results["dic"]
     
-    
+    nt = mld.size
+    nz = depth.size
+    #gets indices for mixed layer
+    zM = np.tile(depth,(nt,1)).T
+    mldM = np.tile(mld,(nz,1))
+    ismld = zM<mldM
     
     #soft tissue
     CF["DICsoft"] = - RCO*AOU
@@ -1223,14 +1218,7 @@ def carbon_framework(DIC, TALK, SA, CT, pres, lon, lat, AOU, pCO2, depth, **karg
     #carbonate
     CF["DICcarb"] = 0.5*( TALK - ALKpre - RNO * AOU )
 
-    if ML_zero and "mld" in kargs:
-        mld = kargs["mld"]
-        nt = mld.size
-        nz = depth.size
-        #gets indices for mixed layer
-        zM = np.tile(depth,(nt,1)).T
-        mldM = np.tile(mld,(nz,1))
-        ismld = zM<mldM
+    if ML_zero:
         CF["DICsoft"][ismld] = 0.
         CF["DICcarb"][ismld] = 0.
     
@@ -1249,299 +1237,3 @@ def carbon_framework(DIC, TALK, SA, CT, pres, lon, lat, AOU, pCO2, depth, **karg
     CF["ALKpre"] = np.copy(ALKpre)
     
     return CF
-
-
-###
-### Net ecosystem production
-def NEP_calculation(date, z, Lon, Lat, Nitrate, POC, SA, **kargs):
-    ##FUNCTION TO CALCULATE NEP from nitrate depletion / POC accumulation
-    if "PLOT" in kargs:
-        PLOT = kargs["PLOT"]
-    else:
-        PLOT = False
-        
-    #first I convert the numerical date to a datetime format so I can get the month and year vectors
-    RCN = 106/16. # Redfield ratio
-
-    nt = date.size
-    dateDT = convert_time_to_date( date )
-    year = np.full( nt, np.nan )
-    month = np.full(nt, np.nan)
-    for i in range(nt):
-        year[i] = dateDT[i].year
-        month[i] = dateDT[i].month
-
-    #integration depth
-    if "mld" in kargs:
-        H = min([np.nanmax(kargs["mld"]),500]) # calculates the maximum ML
-        #print("Integration depth: %1.0f m"%(H))
-    elif "H" in kargs:
-        H = kargs["H"]
-    else:
-        H = 200.
-
-    
-    jh = np.where( z>= H)[0][0] # gets the depth index for the maxmum mixed layer
-
-    #depth integrated nitrate
-    dint_Nitrate = np.nanmean(Nitrate[:jh,:], axis = 0)*H*(1027/1e6)
-    dint_POC = np.nanmean(POC[:jh,:], axis = 0)*H/1000.
-    mSA = np.nanmean( SA[z>500,:], axis = 0 )
-    #by multiplying by density ~1027 and dividing by 1e6 I get units mol m-2
-
-    #for each year calculates the maximum and minimum
-    Uyear = np.unique(year)
-    nyr = Uyear.size
-    date_nit_sum = np.full(nyr, np.nan)
-    date_nit_win = np.full(nyr, np.nan)
-    nit_win = np.full(nyr, np.nan)
-    nit_sum = np.full(nyr, np.nan)
-    nit_win_month_avg = np.full(nyr, np.nan)
-    nit_sum_month_avg = np.full(nyr, np.nan)
-
-    POC_win = np.full(nyr, np.nan)
-    POC_sum = np.full(nyr, np.nan)
-    POC_win_month_avg = np.full(nyr, np.nan)
-    POC_sum_month_avg = np.full(nyr, np.nan)
-
-    SA_win = np.full(nyr, np.nan)
-    SA_sum = np.full(nyr, np.nan)
-    Lat_win = np.full(nyr, np.nan)
-    Lat_sum = np.full(nyr, np.nan)
-    Lon_win = np.full(nyr, np.nan)
-    Lon_sum = np.full(nyr, np.nan)
-    flag_nit_NEP = np.full(nyr, False)
-    for i, yr in enumerate(Uyear):
-        #start_summer = datetime.datetime(int(yr),12,1,0,0).toordinal()
-        #end_summer = datetime.datetime(int(yr)+1,4,1,0,0).toordinal()
-        start_summer = datetime.datetime(int(yr)+1,1,1,0,0).toordinal()
-        end_summer = datetime.datetime(int(yr)+1,4,1,0,0).toordinal()
-        it_summer = np.where( (date>= start_summer) & (date<= end_summer) )[0]
-        if it_summer.size > 0:
-            if np.sum(np.isfinite(dint_Nitrate[it_summer]))>0:
-                imin_nit = it_summer[ np.nanargmin( dint_Nitrate[it_summer] ) ]
-                date_nit_sum[i] = date[imin_nit]  
-                nit_sum[i] =np.nanmin( dint_Nitrate[it_summer])
-                POC_sum[i] = dint_POC[imin_nit]
-                #ii_sum_month = np.where( np.abs(date - date[imin_nit]  )<15 )[0]
-                ii_sum_month = np.where( (month == month[imin_nit]) & (year == year[imin_nit])   )[0]
-                nit_sum_month_avg[i] =np.nanmean( dint_Nitrate[ii_sum_month])
-                POC_sum_month_avg[i] =np.nanmean( dint_POC[ii_sum_month])
-                SA_sum[i] = mSA[imin_nit]
-                Lat_sum[i] = Lat[imin_nit]
-                Lon_sum[i] = Lon[imin_nit]
-
-        #start_winter = datetime.datetime(int(yr),5,1,0,0).toordinal()
-        #end_winter = datetime.datetime(int(yr),12,1,0,0).toordinal()
-        start_winter = datetime.datetime(int(yr),8,1,0,0).toordinal()
-        end_winter = datetime.datetime(int(yr),12,1,0,0).toordinal()
-        it_winter = np.where( (date>= start_winter) & (date<= end_winter) )[0]
-        if it_winter.size > 0:
-            if np.sum(np.isfinite(dint_Nitrate[it_winter]))>0:
-                imax_nit = it_winter[ np.nanargmax( dint_Nitrate[it_winter] ) ]
-                date_nit_win[i] = date[imax_nit]  
-                nit_win[i] = np.nanmax( dint_Nitrate[it_winter])
-                POC_win[i] =  dint_POC[imax_nit]
-                #ii_win_month = np.where( np.abs(date - date[imax_nit]  )<15 )[0]
-                ii_win_month = np.where( (month == month[imax_nit]) &  (year == year[imax_nit])   )[0]
-                nit_win_month_avg[i] =np.nanmean( dint_Nitrate[ii_win_month])
-                POC_win_month_avg[i] =np.nanmean( dint_POC[ii_win_month])
-                SA_win[i] = mSA[imax_nit]
-                Lat_win[i] = Lat[imax_nit]
-                Lon_win[i] = Lon[imax_nit]
-
-    flag_NEP = (np.abs(date_nit_win-date_nit_sum)<8*30) & (np.abs(SA_win-SA_sum)<0.05) & (np.abs(Lon_win-Lon_sum)<8.) & (np.abs(Lat_win-Lat_sum)<5.)
-
-
-    #calculates net ecosystem production (molC m-2 yr-1)
-    NEP = (nit_win - nit_sum)*RCN
-    #from the monthly means
-    NEP_avg = (nit_win_month_avg - nit_sum_month_avg)*RCN
-
-    NEP_POC = -(POC_win - POC_sum)
-    NEP_POC_avg = -(POC_win_month_avg - POC_sum_month_avg)
-
-    #gets the date around the depletion
-    date_NEP = 0.5*(date_nit_sum +date_nit_win )
-    Lon_NEP = 0.5*(Lon_win+Lon_sum)
-    Lat_NEP = 0.5*(Lat_win+Lat_sum)
-    
-
-    if PLOT:        
-        print( "\n-------------------------------------------------------------------------")
-        print("YEAR\t    NEP Nit\t     <NEP Nit>\t      NEP POC\t      <NEP POC>" )
-        print("\t\t\t\t [mol/m2/yr]")
-        print( "-------------------------------------------------------------------------")
-        for i in range(nyr):
-            print("%d-%d\t %1.2f\t\t%1.2f\t\t%1.2f\t\t%1.2f"%(Uyear[i],Uyear[i]+1, NEP[i], NEP_avg[i], NEP_POC[i], NEP_POC_avg[i])  )
-        print( "-------------------------------------------------------------------------")
-        print("Mean     \t%1.2f\t\t%1.2f\t\t%1.2f\t\t%1.2f"%(np.nanmean(NEP), np.nanmean(NEP_avg),np.nanmean(NEP_POC), np.nanmean(NEP_POC_avg)))
-        print( "-------------------------------------------------------------------------")
-
-
-        #Plots the results 
-        fig, ax = plt.subplots(3,1,figsize = (8,6), sharex = True)
-        ax[0].plot( date, dint_Nitrate, "k" )
-        l1,=ax[0].plot(date_nit_sum, nit_sum,"o", ms = 10, mec = "k", color = "goldenrod")
-        l2,=ax[0].plot(date_nit_win, nit_win,"o", ms = 10, mec = "k", color = "green")
-        for i in range(nyr):
-            ax[0].plot([date_nit_sum[i]-15,date_nit_sum[i]+15], [nit_sum_month_avg[i],nit_sum_month_avg[i]], color = "k", zorder = -1)
-            ax[0].plot([date_nit_win[i]-15,date_nit_win[i]+15], [nit_win_month_avg[i],nit_win_month_avg[i]], zorder = -1, color = "k")
-        yl = ax[0].get_ylim()
-        for i in range(nyr):
-            ax[0].fill_between( [date_nit_sum[i]-15,date_nit_sum[i]+15], y1 = yl[0], y2 = yl[1], color = l1.get_color(), alpha = 0.3 )
-            ax[0].fill_between( [date_nit_win[i]-15,date_nit_win[i]+15], y1 = yl[0], y2 = yl[1], color = l2.get_color(), alpha = 0.3 )
-
-        ax[0].set_ylim(yl)
-        ax[0].set_ylabel( "$\\int \\mathrm{Nitrate}\, \\rm d z$\n[mol m$^{-2}$]" )
-        ax[0].grid(True)
-
-
-        ax[1].plot( date, dint_POC, "k" )
-        l1,=ax[1].plot(date_nit_sum, POC_sum,"o", ms = 10, mec = "k", color = "goldenrod")
-        l2,=ax[1].plot(date_nit_win, POC_win,"o", ms = 10, mec = "k", color = "green")
-        for i in range(nyr):
-            ax[1].plot([date_nit_sum[i]-15,date_nit_sum[i]+15], [POC_sum_month_avg[i],POC_sum_month_avg[i]], color = "k", zorder = -1)
-            ax[1].plot([date_nit_win[i]-15,date_nit_win[i]+15], [POC_win_month_avg[i],POC_win_month_avg[i]], zorder = -1, color = "k")
-        yl = ax[1].get_ylim()
-        for i in range(nyr):
-            ax[1].fill_between( [date_nit_sum[i]-15,date_nit_sum[i]+15], y1 = yl[0], y2 = yl[1], color = l1.get_color(), alpha = 0.3 )
-            ax[1].fill_between( [date_nit_win[i]-15,date_nit_win[i]+15], y1 = yl[0], y2 = yl[1], color = l2.get_color(), alpha = 0.3 )
-
-        ax[1].set_ylim(yl)
-        ax[1].set_ylabel( "$\\int \\mathrm{POC}\, \\rm d z$\n[mol m$^{-2}$]" )
-        ax[1].grid(True)
-
-        ax[2].bar( date_NEP[flag_NEP]-50, NEP[flag_NEP], width = 50, ec = "k", label = "Nit 1-prof"  )
-        ax[2].bar( date_NEP[flag_NEP]-30, NEP_avg[flag_NEP], width = 50, ec = "k", label = "Nit month" )
-        ax[2].bar( date_NEP[flag_NEP]+30, NEP_POC[flag_NEP], width = 50, ec = "k", label = "POC 1-prof"  )
-        ax[2].bar( date_NEP[flag_NEP]+50, NEP_POC_avg[flag_NEP], width = 50, ec = "k", label = "POC month" )
-        ax[2].set_ylabel("NEP\n[molC m$^{-2}$ y$^{-1}$]")
-        ax[2].legend(loc = "center left", bbox_to_anchor = (1.01,0.5))
-        formatter = mdates.DateFormatter("%Y") ### formatter of the date
-        locator = mdates.YearLocator() ### where to put the labels
-        ax[2].xaxis.set_major_locator(locator)
-        ax[2].xaxis.set_major_formatter(formatter)
-        ax[2].grid(True)
-
-    return date_NEP, Lon_NEP, Lat_NEP, NEP_avg, NEP_POC_avg, flag_NEP
-
-
-def oxygen_consumption_rate(date, z, Lon, Lat, Oxygen, SA, **kargs):
-    if "PLOT" in kargs:
-        PLOT = kargs["PLOT"]
-    else:
-        PLOT = False
-    if "zmax" in kargs:
-        zmax = kargs["zmax"]
-    else:
-        zmax = 500.
-    if "zmin" in kargs:
-        zmin = kargs["zmin"]
-    else:
-        zmin = 100.
-    RCO = - 106./170.
-    
-    nt = date.size
-    dateDT = convert_time_to_date( date )
-    year = np.full( nt, np.nan )
-    month = np.full(nt, np.nan)
-    for i in range(nt):
-        year[i] = dateDT[i].year
-        month[i] = dateDT[i].month
-        
-    dz = z[1]-z[0]
-    jh = np.where((z>=zmin) & (z<=zmax))[0]
-
-    #depth integrated O2
-    dint_O2 = moving_average( np.nanmean(Oxygen[jh,:], axis = 0),10)
-    mSA = np.nanmean( SA[z>500,:], axis = 0 )
-
-    O2 = np.copy(Oxygen)
-    nz, nt = O2.shape
-    for j in range(nz):
-        O2[j,:] = moving_average(O2[j,:],10)
-
-    if "mld" in kargs:
-        zM = np.tile(z,(nt,1)).T
-        mldM = np.tile(kargs["mld"],(nz,1))
-        ismld = zM<mldM
-        O2[ismld] = np.nan
-
-    #for each year calculates the maximum and minimum
-    Uyear = np.unique(year)
-    nyr = Uyear.size
-    date_O2_sum = np.full(nyr, np.nan)
-    date_O2_win = np.full(nyr, np.nan)
-    R_O2 = np.full(nyr, np.nan)
-
-    SA_O2_win = np.full(nyr, np.nan)
-    SA_O2_sum = np.full(nyr, np.nan)
-    Lat_O2_win = np.full(nyr, np.nan)
-    Lat_O2_sum = np.full(nyr, np.nan)
-    Lon_O2_win = np.full(nyr, np.nan)
-    Lon_O2_sum = np.full(nyr, np.nan)
-
-    for i, yr in enumerate(Uyear):
-        start_winter = datetime.datetime(int(yr),8,1,0,0).toordinal()
-        end_winter = datetime.datetime(int(yr),12,1,0,0).toordinal()
-        it_winter = np.where( (date>= start_winter) & (date<= end_winter) )[0]
-        imax_O2 = np.nan
-        imin_O2 = np.nan
-        if it_winter.size > 0:
-            if np.sum(np.isfinite(dint_O2[it_winter]))>0:
-                imax_O2 = it_winter[ np.nanargmax( dint_O2[it_winter] ) ]
-
-        start_summer = datetime.datetime(int(yr)+1,1,1,0,0).toordinal()
-        end_summer = datetime.datetime(int(yr)+1,4,1,0,0).toordinal()
-        it_summer = np.where( (date>= start_summer) & (date<= end_summer) )[0]
-        if it_summer.size > 0:
-            if np.sum(np.isfinite(dint_O2[it_summer]))>0:
-                imin_O2 = it_summer[ np.nanargmin( dint_O2[it_summer] ) ]
-
-        if np.isfinite(imin_O2) and np.isfinite(imax_O2) and (imin_O2>imax_O2):
-            iiy = np.arange( imax_O2, imin_O2+1  )
-            dO2dt = np.full(nz, 0.)
-            for j in jh:
-                ox = O2[j,iiy]
-                time = date[iiy]
-                iif = np.isfinite(ox)
-                time = time[iif]
-                ox = ox[iif]
-                p = np.polyfit(time,ox,1)
-                #print(p[0])
-                dO2dt[j] = p[0]*(time[-1]-time[0])
-            R_O2[i] = np.nansum( 0.5*(dO2dt[1:]+dO2dt[:-1])*1027*1e-6*RCO*(z[1:]-z[:-1]))
-            date_O2_win[i] = date[imax_O2]  
-            SA_O2_win[i] = mSA[imax_O2]
-            Lat_O2_win[i] = Lat[imax_O2]
-            Lon_O2_win[i] = Lon[imax_O2]
-            date_O2_sum[i] = date[imin_O2]  
-            SA_O2_sum[i] = mSA[imin_O2]
-            Lat_O2_sum[i] = Lat[imin_O2]
-            Lon_O2_sum[i] = Lon[imin_O2]
-
-    flag_O2_R = (np.abs(date_O2_win-date_O2_sum)>3*30) & (np.abs(SA_O2_win-SA_O2_sum)<0.05) & (np.abs(Lon_O2_win-Lon_O2_sum)<8.) & (np.abs(Lat_O2_win-Lat_O2_sum)<5.)        
-    date_R = 0.5*(date_O2_sum +date_O2_win )
-    Lon_R = 0.5*(Lon_O2_win+Lon_O2_sum)
-    Lat_R = 0.5*(Lat_O2_win+Lat_O2_sum)
-
-    
-    if PLOT:
-        fig, ax = plt.subplots(2,1,figsize = (8,5), sharex = True)  
-        ax[0].plot(date, dint_O2,"k")
-        yl = ax[0].get_ylim()
-        for i in range(date_O2_sum.size):
-            ax[0].fill_between( [date_O2_win[i], date_O2_sum[i]], y1 = yl[0], y2 = yl[1],color = "gray" )
-        ax[0].set_ylim(yl)
-        ax[0].set_ylabel("$\\langle \\mathrm{Oxygen} \\rangle$ [$\\mu$mol kg $^{-1}$]")
-        ax[1].bar( date_R[flag_O2_R], R_O2[flag_O2_R], width = 50, ec = "k" )
-        ax[1].set_ylabel("R\n[molC m$^{-2}$ y$^{-1}$]")
-        #ax[1].legend(loc = "center left", bbox_to_anchor = (1.01,0.5))
-        formatter = mdates.DateFormatter("%Y") ### formatter of the date
-        locator = mdates.YearLocator() ### where to put the labels
-        ax[1].xaxis.set_major_locator(locator)
-        ax[1].xaxis.set_major_formatter(formatter)
-        ax[1].grid(True)
-        
-    return date_R, Lon_R, Lat_R, R_O2, flag_O2_R
