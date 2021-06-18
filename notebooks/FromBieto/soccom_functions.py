@@ -12,7 +12,7 @@ import os
 from cartopy import crs
 import cartopy.feature as cfeat
 import cmocean
-import pygamma
+#import pygamma
 import copy
 import glob
 import xarray as xr
@@ -117,11 +117,11 @@ class grids_one_buoy():
         self.raw["SA"] = gsw.SA_from_SP( self.raw["Salinity"], self.raw["Pressure"], self.raw["Lon"], self.raw["Lat"] ) #-10.1325
         self.raw["CT"] = gsw.CT_from_t(self.raw["SA"],self.raw["Temperature"],self.raw["Pressure"]) #-10.1325
         self.raw["Sigma_theta"]  = gsw.sigma0(self.raw["SA"],self.raw["CT"])
-        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0])
-        if not np.ma.isMaskedArray(self.raw["gamma_n"]):
-            self.raw["gamma_n"] = np.ma.array( self.raw["gamma_n"] )
-            self.raw["gamma_n"].mask = np.copy( self.raw["Sigma_theta"].mask )
-            
+#        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0])
+#        if not np.ma.isMaskedArray(self.raw["gamma_n"]):
+#            self.raw["gamma_n"] = np.ma.array( self.raw["gamma_n"] )
+        self.raw["gamma_n"] =self.raw["Sigma_theta"] # using potential density instead of neutral density
+    
         #biogeochemical
         bg_vars = ["Oxygen","OxygenSat","Nitrate","DIC_LIAR","TALK_LIAR","pCO2_LIAR","Chla_corr","POC"]
         self.raw_bg = dict()
@@ -635,13 +635,15 @@ class grids_one_buoy():
         proj = crs.LambertAzimuthalEqualArea(central_latitude=-90.0)
         ax0 = fig.add_axes([0.10,0.67,0.3,0.3], projection = proj)
         ax0.gridlines(draw_labels=False)
-        ax0.set_extent([-180, 180, -90, -25], crs.PlateCarree())
+        ax0.set_extent([-180, 180, -90, -45], crs.PlateCarree()) # originally -25 as north extent, will shorten to -45
         ax0.stock_img()
-        
+
         cc = ax0.scatter(self.raw["Lon"], self.raw["Lat"], 20, c = self.raw["date"],transform = crs.PlateCarree(),)#-self.raw["date"][0])
         loc = mdates.AutoDateLocator()
         fig.colorbar(cc, ticks=loc,
                  format=mdates.AutoDateFormatter(loc))
+        
+        
 
         """
         ax0 = fig.add_axes([0.10,0.67,0.3,0.3])
