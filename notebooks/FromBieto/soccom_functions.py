@@ -84,7 +84,7 @@ class grids_one_buoy():
         self.raw["date"] = nfc["JULD"][:] + ref_date.toordinal() 
         self.raw["date_dt"] = convert_time_to_date(self.raw["date"])
         #reads the variables
-        self.raw["depth"] = nfc["Depth"][:].T
+        self.raw["depth"] = nfc["Depth"][:].T # .T is transpose function
         if np.ma.isMaskedArray(self.raw["depth"]):
             self.raw["depth"].mask = (self.raw["depth"].mask) | (nfc["Depth_QFA"][:].T == 8) | (self.raw["depth"]<0)
         else:
@@ -114,10 +114,10 @@ class grids_one_buoy():
 
 
         #derived values
-        self.raw["SA"] = gsw.SA_from_SP( self.raw["Salinity"], self.raw["Pressure"], self.raw["Lon"], self.raw["Lat"] ) #-10.1325
-        self.raw["CT"] = gsw.CT_from_t(self.raw["SA"],self.raw["Temperature"],self.raw["Pressure"]) #-10.1325
-        self.raw["Sigma_theta"]  = gsw.sigma0(self.raw["SA"],self.raw["CT"])
-#        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0])
+        self.raw["SA"] = gsw.SA_from_SP( self.raw["Salinity"], self.raw["Pressure"], self.raw["Lon"], self.raw["Lat"] ) #-10.1325 #absolute salinity from practical salinity
+        self.raw["CT"] = gsw.CT_from_t(self.raw["SA"],self.raw["Temperature"],self.raw["Pressure"]) #-10.1325 #Conservative Temperature of seawater from in-situ temperature
+        self.raw["Sigma_theta"]  = gsw.sigma0(self.raw["SA"],self.raw["CT"]) #Calculates potential density anomaly with reference pressure of 0 dbar,
+#        self.raw["gamma_n"] = np.transpose(pygamma.gamma_n( self.raw["Salinity"].T, self.raw["Temperature"].T, self.raw["Pressure"].T, self.raw["Lon"], self.raw["Lat"]   )[0]) # neutral density calculations removed for the moment because I don't have fortran/coding skills to obtain np package
 #        if not np.ma.isMaskedArray(self.raw["gamma_n"]):
 #            self.raw["gamma_n"] = np.ma.array( self.raw["gamma_n"] )
         self.raw["gamma_n"] =self.raw["Sigma_theta"] # using potential density instead of neutral density
@@ -191,15 +191,15 @@ class grids_one_buoy():
 
         
     
-        nt = self.raw["Temperature"].shape[1]
+        nt = self.raw["Temperature"].shape[1] # shape[1]=profiles
 
         #LT
         self.raw["LT_ov"] = np.full( self.raw["Temperature"].shape, np.nan )
         self.raw["size_ov"] = np.full( self.raw["Temperature"].shape, np.nan )
         
-        #grids
+        #grids - making grids of depthxprofiles, filled with nans for the moment
         self.gr = dict()
-        self.gr["depth"] = np.arange(0,2000+dz,dz)
+        self.gr["depth"] = np.arange(0,2000+dz,dz) # default above is 5 m intervals
         nz = self.gr["depth"].size
         self.gr["date"] = np.copy(self.raw["date"])
         #self.gr["date_dt"] = convert_time_to_date(self.gr["date"])
@@ -224,9 +224,9 @@ class grids_one_buoy():
         
         #mixing parameters
         self.gr["LT"] = np.full((nz, nt), np.nan)
-        self.gr["mld"] = np.full(nt, np.nan)
+        self.gr["mld"] = np.full(nt, np.nan) # one value per profile
         self.gr["mld_HT"] = np.full(nt, np.nan)
-        #self.gr["gpa0"] = np.full(nt, np.nan)
+        #self.gr["gpa0"] = np.full(nt, np.nan) # not sure what this would be if it was uncommented?
         self.gr["mld_DO"] = np.full(nt, np.nan) 
         self.gr["LT_ml"] = np.full(nt, 0.)
         self.gr["LT_ov"] = np.full((nz,nt), 0.)
@@ -238,13 +238,13 @@ class grids_one_buoy():
             if verbose:
                 print("Float %s, profile: %d"%(self.raw["code"],i+1))
             #Interpolates temperature
-            ii = np.argsort(self.raw["depth"][:,i])
-            z0 = self.raw["depth"][ii,i]
+            ii = np.argsort(self.raw["depth"][:,i]) # argsort creates an array the same size as input. Each cell in array is given the index of where to find the number in input array that should be located in that cell in order to have numerical order. This looks across profile (column) i, down all entries (rows) in column i
+            z0 = self.raw["depth"][ii,i] # z0 is the depths sorted from shallowest to deepest, with blank values following
             #deletes profiles shorter than 950 m
             if clear_short and max(z0)<950:
-                continue
-            p0 = self.raw["Pressure"][ii,i]
-            T0 = self.raw["Temperature"][ii,i]
+                continue # if chosen to delete short profiles, then loop goes back up to start without loading data into grid, as below
+            p0 = self.raw["Pressure"][ii,i] # p0 is the pressure values sorted according to the argsort above
+            T0 = self.raw["Temperature"][ii,i] # same, T0 is the temp sorted according to the argsort above (so orders the data for the shallowest to deepest value, then puts all the nans at the end
             msk = ~((T0.mask) | (z0.mask))
             self.gr["Temperature"][:,i] = grids_interpolates(z0[msk], T0[msk], self.gr["depth"], dz, grid = gridding)
 
@@ -304,7 +304,7 @@ class grids_one_buoy():
             #stratification
             #N2,pmid = gsw.Nsquared( self.gr["SA"][:,i], self.gr["CT"][:,i], self.gr["Pressure"][:,i]-10.1325  )
             ddendz = first_centered_differences( -self.gr["depth"], self.gr["Sigma_theta"][:,i] )
-            self.gr["N2"][:,i] = -(1000+self.gr["Sigma_theta"][:,i])**-1*gsw.grav( self.gr["Pressure"][:,i], self.gr["Lat"][i] )*ddendz #-10.1325
+            self.gr["N2"][:,i] = -(1000+self.gr["Sigma_theta"][:,i])**-1*gsw.grav( self.gr["Lat"][i],self.gr["Pressure"][:,i] )*ddendz #-10.1325
             self.gr["PV"][:,i] = (1000+self.gr["Sigma_theta"][:,i])**-1*gsw.f( self.gr["Lat"][i] )*ddendz
             #self.gr["PV"][:,i] = sw.f( self.gr["Lat"][i] )*self.gr["N2"][:,i]
             """
