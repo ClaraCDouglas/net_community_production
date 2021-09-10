@@ -90,4 +90,9 @@ target/
 # Mypy cache
 .mypy_cache/
 
+
+data/raw/
+data/interim/
 data/raw
+notebooks/FromBieto/float_data/
+

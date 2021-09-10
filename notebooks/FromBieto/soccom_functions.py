@@ -64,7 +64,7 @@ class grids_one_buoy():
         variables = list(nfc.variables.keys())
         #print(nfc)
         self.raw = dict()
-        self.raw["depth"] = nfc["Depth"][:]
+        self.raw["depth"] = nfc["Depth"][:] #
         self.raw["Lat"] = nfc["Lat"][:]
         self.raw["Lon"] = nfc["Lon"][:]
         self.raw["Lon"][self.raw["Lon"]>180] = self.raw["Lon"][self.raw["Lon"]>180] - 360.
@@ -783,7 +783,7 @@ def grids_interpolates(x0,y0,x,dx, grid = False):
 
 def mixed_layer_depth(z0, den0, Dd = 0.03, crit = "diff", z_min = 30., intrp = True):
     #Mixed layer calculation
-    if crit != "diff" and crit != "grad" and crit != "DO":
+    if crit != "diff" and crit != "grad" and crit != "DO": # != is callled bang, and it is asking if something is not equal to something else
         crit = "diff"
         print("Incorrect criterion, set to diff")
     c,f = den0.shape
