@@ -1,0 +1,38 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+python module _gamma
+    interface
+        subroutine gamma_n(filename,s,t,p,n,along,alat,gamma,dg_lo,dg_hi, ierr) ! in gamma-n.f90
+            character *(*) :: filename
+            double precision dimension(n) :: s
+            double precision dimension(n),depend(n) :: t
+            double precision dimension(n),depend(n) :: p
+            integer optional,check(len(s)>=n),depend(s) :: n=len(s)
+            double precision :: along
+            double precision :: alat
+            double precision dimension(n),depend(n),intent(out) :: gamma
+            double precision dimension(n),depend(n),intent(out) :: dg_lo
+            double precision dimension(n),depend(n),intent(out) :: dg_hi
+            integer intent(out) :: ierr
+        end subroutine gamma_n
+        subroutine neutral_surfaces(s,t,p,gamma,n,glevels,ng,sns,tns,pns,dsns,dtns,dpns, ierr) ! in neutral-surfaces.f90
+            double precision dimension(n) :: s
+            double precision dimension(n),depend(n) :: t
+            double precision dimension(n),depend(n) :: p
+            double precision dimension(n),depend(n) :: gamma
+            integer optional,check(len(s)>=n),depend(s) :: n=len(s)
+            double precision dimension(ng) :: glevels
+            integer optional,check(len(glevels)>=ng),depend(glevels) :: ng=len(glevels)
+            double precision dimension(ng),depend(ng),intent(out) :: sns
+            double precision dimension(ng),depend(ng),intent(out) :: tns
+            double precision dimension(ng),depend(ng),intent(out) :: pns
+            double precision dimension(ng),depend(ng),intent(out) :: dsns
+            double precision dimension(ng),depend(ng),intent(out) :: dtns
+            double precision dimension(ng),depend(ng),intent(out) :: dpns
+            integer intent(out) :: ierr
+        end subroutine neutral_surfaces
+    end interface
+end python module _gamma
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

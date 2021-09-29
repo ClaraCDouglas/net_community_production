@@ -1,0 +1,9 @@
+syntax: glob
+*~
+*.pyc
+*.a
+*.so
+build/
+dist/
+hg_status.py
+
