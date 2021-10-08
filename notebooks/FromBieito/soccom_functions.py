@@ -622,7 +622,7 @@ class grids_one_buoy():
         else:
             plt.close(fig)
             
-    def plots_map_main_variables(self, saves = True, shows = False,**kargs):
+    def plots_map_main_variables(self, studyarea, saves = True, shows = False,**kargs):
         if not os.path.exists('float_maps'):
             os.makedirs('float_maps')
 
@@ -643,7 +643,7 @@ class grids_one_buoy():
         loc = mdates.AutoDateLocator()
         fig.colorbar(cc, ticks=loc,
                  format=mdates.AutoDateFormatter(loc))
-        
+        box = ax0.plot([studyarea[:,0]],[studyarea[:,1]],transform = crs.PlateCarree(),color='green', marker=',', linestyle='dashed',linewidth=1.5, markersize=1.5)
         
 
         """
