@@ -123,7 +123,7 @@ class grids_one_buoy():
         self.raw["gamma_n"] =self.raw["Sigma_theta"] # using potential density instead of neutral density
     
         #biogeochemical
-        bg_vars = ["Oxygen","OxygenSat","Nitrate","DIC_LIAR","TALK_LIAR","pCO2_LIAR","Chla_corr","POC"]
+        bg_vars = ["Oxygen","OxygenSat","Nitrate","DIC_LIAR","TALK_LIAR","pCO2_LIAR","Chl_a","Chl_a_corr","POC"]
         self.raw_bg = dict()
         if "Oxygen" in variables:
             self.raw_bg["Oxygen"] = nfc["Oxygen"][:].T
@@ -173,13 +173,21 @@ class grids_one_buoy():
                 self.raw_bg["pCO2_LIAR"] = np.ma.array(self.raw_bg["pCO2_LIAR"])
                 self.raw_bg["pCO2_LIAR"].mask =  (nfc["pCO2_LIAR_QFA"][:].T == 8)
 
-        if "Chl_a_corr" in variables:
-            self.raw_bg["Chl_a"] = nfc["Chl_a_corr"][:].T
+        if "Chl_a" in variables:
+            self.raw_bg["Chl_a"] = nfc["Chl_a"][:].T
             if np.ma.isMaskedArray(self.raw_bg["Chl_a"]):
-                self.raw_bg["Chl_a"].mask = (self.raw_bg["Chl_a"].mask) | (nfc["Chl_a_corr_QFA"][:].T == 8)
+                self.raw_bg["Chl_a"].mask = (self.raw_bg["Chl_a"].mask) | (nfc["Chl_a_QFA"][:].T == 8)
             else:
                 self.raw_bg["Chl_a"] = np.ma.array(self.raw_bg["Chl_a"])
-                self.raw_bg["Chl_a"].mask =  (nfc["Chl_a_corr_QFA"][:].T == 8)
+                self.raw_bg["Chl_a"].mask =  (nfc["Chl_a_QFA"][:].T == 8)
+        
+        if "Chl_a_corr" in variables:
+            self.raw_bg["Chl_a_corr"] = nfc["Chl_a_corr"][:].T
+            if np.ma.isMaskedArray(self.raw_bg["Chl_a_corr"]):
+                self.raw_bg["Chl_a_corr"].mask = (self.raw_bg["Chl_a_corr"].mask) | (nfc["Chl_a_corr_QFA"][:].T == 8)
+            else:
+                self.raw_bg["Chl_a_corr"] = np.ma.array(self.raw_bg["Chl_a_corr"])
+                self.raw_bg["Chl_a_corr"].mask =  (nfc["Chl_a_corr_QFA"][:].T == 8)
 
         if "POC" in variables:
             self.raw_bg["POC"] = nfc["POC"][:].T
@@ -202,7 +210,7 @@ class grids_one_buoy():
         self.gr["depth"] = np.arange(0,2000+dz,dz) # default above is 5 m intervals
         nz = self.gr["depth"].size
         self.gr["date"] = np.copy(self.raw["date"])
-        #self.gr["date_dt"] = convert_time_to_date(self.gr["date"])
+        self.gr["date_dt"] = convert_time_to_date(self.gr["date"])
         self.gr["Lon"] = np.copy(self.raw["Lon"])
         self.gr["Lat"] = np.copy(self.raw["Lat"])
         self.gr["code"] = copy.copy(self.raw["code"])
@@ -632,7 +640,7 @@ class grids_one_buoy():
         #if "weddel_file" in kargs
 
         
-        fig = plt.figure(figsize = (14,8))
+        fig = plt.figure(figsize = (30,18))
         proj = crs.LambertAzimuthalEqualArea(central_latitude=-90.0)
         ax0 = fig.add_axes([0.10,0.67,0.3,0.3], projection = proj)
         ax0.gridlines(draw_labels=False)
