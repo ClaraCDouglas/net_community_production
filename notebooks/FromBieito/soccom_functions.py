@@ -747,19 +747,31 @@ class grids_one_buoy():
             ax4.set_yticklabels([])
             ax4.set_xticklabels([])
 
-
-        if "DIC_LIAR" in self.gr.keys():
+        if "Chl_a" in self.gr.keys():
             ax5 = fig.add_axes([0.54,0.05,0.47,0.27])
-            cfT=ax5.contourf(self.gr["date"], self.gr["depth"], self.gr["DIC_LIAR"],20, cmap = cmocean.cm.ice_r)
+            cfT=ax5.contourf(self.gr["date"], self.gr["depth"], self.gr["Chl_a"],20, cmap = cmocean.cm.algae)
             #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["Salinity"],20, colors = "gray", linewidths = 1)
             #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["DIC_LIAR"],[0], colors = "gray", linewidths = 1)
             ax5.plot(self.gr["date"], self.gr["mld"], color = "k", lw = 1)
             ax5.plot(self.gr["date"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
             cb = fig.colorbar(cfT)
-            ax5.annotate("DIC [$\\mu$ mol kg$^{-1}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
+            ax5.annotate("Chl_a [mg m$^{-3}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
             ax5.set_ylim(yl)
             ax5.set_yticklabels([])
             ax5.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
+            
+        #if "DIC_LIAR" in self.gr.keys():
+         #   ax5 = fig.add_axes([0.54,0.05,0.47,0.27])
+          #  cfT=ax5.contourf(self.gr["date"], self.gr["depth"], self.gr["DIC_LIAR"],20, cmap = cmocean.cm.ice_r)
+           # #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["Salinity"],20, colors = "gray", linewidths = 1)
+            ##ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["DIC_LIAR"],[0], colors = "gray", linewidths = 1)
+            #ax5.plot(self.gr["date"], self.gr["mld"], color = "k", lw = 1)
+            #ax5.plot(self.gr["date"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
+            #cb = fig.colorbar(cfT)
+            #ax5.annotate("DIC [$\\mu$ mol kg$^{-1}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
+            #ax5.set_ylim(yl)
+            #ax5.set_yticklabels([])
+            #ax5.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
         filename = "float_maps/%s_map.png"%(self.raw["code"])
         if saves:
             fig.savefig(filename)
