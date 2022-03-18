@@ -677,13 +677,13 @@ class grids_one_buoy():
         """
 
         ax1 = fig.add_axes([0.07,0.35,0.47,0.27])
-        cfT=ax1.contourf(self.gr["date"], self.gr["depth"], self.gr["CT"],20, cmap = cmocean.cm.thermal)
+        cfT=ax1.contourf(self.gr["date_dt"], self.gr["depth"], self.gr["CT"],20, cmap = cmocean.cm.thermal)
         #ccT = ax1.contour(self.gr["date"], self.gr["depth"], self.gr["Temperature"],20, colors = "w", linewidths = 1)
-        ax1.plot(self.gr["date"], self.gr["mld"], color = "w", lw = 1)
-        ax1.plot(self.gr["date"], self.gr["mld_HT"], color = "w", lw = 1, ls = "dotted")
-        ax1.plot(self.gr["date"], self.gr["mld_DO"], ls = "--", color = "w", lw = 1)
-        ax1.plot(self.gr["date"],1990*np.ones(self.gr["date"].size),marker = "|", color = "k")
-        cD = ax1.contour(self.gr["date"], self.gr["depth"], self.gr["gamma_n"],[26.80,27.23,27.50], colors = "skyblue", linewidths = 1)
+        ax1.plot(self.gr["date_dt"], self.gr["mld"], color = "w", lw = 1)
+        ax1.plot(self.gr["date_dt"], self.gr["mld_HT"], color = "w", lw = 1, ls = "dotted")
+        ax1.plot(self.gr["date_dt"], self.gr["mld_DO"], ls = "--", color = "w", lw = 1)
+        #ax1.plot(self.gr["date"],1990*np.ones(self.gr["date"].size),marker = "|", color = "k") # not sure what this does, commented out for the moment (18/03/2022) because using date_dt now
+        cD = ax1.contour(self.gr["date_dt"], self.gr["depth"], self.gr["gamma_n"],[26.80,27.23,27.50], colors = "skyblue", linewidths = 1)
         plt.clabel(cD, fmt = "%1.2f", fontsize = 6)
         cb = fig.colorbar(cfT)
         ax1.annotate("$\Theta$ [$^{\\mathrm{o}}$C]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
@@ -697,10 +697,10 @@ class grids_one_buoy():
         #ax1.xaxis.set_major_formatter(mdates.AutoDateFormatter(loc))
 
         ax2 = fig.add_axes([0.07,0.05,0.47,0.27])
-        cfT=ax2.contourf(self.gr["date"], self.gr["depth"], self.gr["SA"],20, cmap = cmocean.cm.haline)
+        cfT=ax2.contourf(self.gr["date_dt"], self.gr["depth"], self.gr["SA"],20, cmap = cmocean.cm.haline)
         #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["Salinity"],20, colors = "gray", linewidths = 1)
-        ax2.plot(self.gr["date"], self.gr["mld"], color = "w", lw = 1)
-        ax2.plot(self.gr["date"], self.gr["mld_DO"], ls = "--",color = "w", lw = 1)
+        ax2.plot(self.gr["date_dt"], self.gr["mld"], color = "w", lw = 1)
+        ax2.plot(self.gr["date_dt"], self.gr["mld_DO"], ls = "--",color = "w", lw = 1)
         cb = fig.colorbar(cfT)
         ax2.annotate("$S_A$", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8) )
         ax2.set_ylim(yl)
@@ -722,9 +722,9 @@ class grids_one_buoy():
         
         if "Nitrate" in self.gr.keys():
             ax3 = fig.add_axes([0.54,0.65,0.47,0.27])
-            ccT = ax3.contourf(self.gr["date"], self.gr["depth"], self.gr["Nitrate"], 20, cmap = cmocean.cm.matter)
-            ax3.plot(self.gr["date"], self.gr["mld"], color = "w", lw = 1)
-            ax3.plot(self.gr["date"], self.gr["mld_DO"], ls ="--",color = "w", lw = 1)
+            ccT = ax3.contourf(self.gr["date_dt"], self.gr["depth"], self.gr["Nitrate"], 20, cmap = cmocean.cm.matter)
+            ax3.plot(self.gr["date_dt"], self.gr["mld"], color = "w", lw = 1)
+            ax3.plot(self.gr["date_dt"], self.gr["mld_DO"], ls ="--",color = "w", lw = 1)
             plt.colorbar(ccT, ax = ax3)
             ax3.set_ylim(yl)
             ax3.set_ylabel("Depth [m]")
@@ -736,11 +736,11 @@ class grids_one_buoy():
         
         if "Oxygen" in self.gr.keys():
             ax4 = fig.add_axes([0.54,0.35,0.47,0.27])
-            cfT=ax4.contourf(self.gr["date"], self.gr["depth"], self.gr["Oxygen"]-100*self.gr["Oxygen"]/self.gr["OxygenSat"],20, cmap = cmocean.cm.oxy)
+            cfT=ax4.contourf(self.gr["date_dt"], self.gr["depth"], self.gr["Oxygen"]-100*self.gr["Oxygen"]/self.gr["OxygenSat"],20, cmap = cmocean.cm.oxy)
             #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["Salinity"],20, colors = "gray", linewidths = 1)
-            ccT = ax4.contour(self.gr["date"], self.gr["depth"], self.gr["Oxygen"]-100*self.gr["Oxygen"]/self.gr["OxygenSat"],[0], colors = "blue", linewidths = 1)
-            ax4.plot(self.gr["date"], self.gr["mld"], color = "k", lw = 1)
-            ax4.plot(self.gr["date"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
+            ccT = ax4.contour(self.gr["date_dt"], self.gr["depth"], self.gr["Oxygen"]-100*self.gr["Oxygen"]/self.gr["OxygenSat"],[0], colors = "blue", linewidths = 1)
+            ax4.plot(self.gr["date_dt"], self.gr["mld"], color = "k", lw = 1)
+            ax4.plot(self.gr["date_dt"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
             cb = fig.colorbar(cfT)
             ax4.annotate("DO-DO$_{\\mathrm{sat}}$ [$\\mu$ mol kg$^{-1}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
             ax4.set_ylim(yl)
@@ -749,11 +749,11 @@ class grids_one_buoy():
 
         if "Chl_a" in self.gr.keys():
             ax5 = fig.add_axes([0.54,0.05,0.47,0.27])
-            cfT=ax5.contourf(self.gr["date"], self.gr["depth"], self.gr["Chl_a"],20, cmap = cmocean.cm.algae)
+            cfT=ax5.contourf(self.gr["date_dt"], self.gr["depth"], self.gr["Chl_a"],20, cmap = cmocean.cm.algae)
             #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["Salinity"],20, colors = "gray", linewidths = 1)
             #ccT = ax2.contour(self.gr["date"], self.gr["depth"], self.gr["DIC_LIAR"],[0], colors = "gray", linewidths = 1)
-            ax5.plot(self.gr["date"], self.gr["mld"], color = "k", lw = 1)
-            ax5.plot(self.gr["date"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
+            ax5.plot(self.gr["date_dt"], self.gr["mld"], color = "k", lw = 1)
+            ax5.plot(self.gr["date_dt"], self.gr["mld_DO"], ls = "--", color = "k", lw = 1)
             cb = fig.colorbar(cfT)
             ax5.annotate("Chl_a [mg m$^{-3}$]", xy = (0.02,0.05), xycoords = "axes fraction", fontweight = "bold", color = "k", bbox = dict(facecolor = "w", alpha =0.8))
             ax5.set_ylim(yl)
