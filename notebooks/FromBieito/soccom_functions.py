@@ -79,6 +79,12 @@ class grids_one_buoy():
         i1 = metadata[i0:].find("\n") + i0
         self.raw["WMO_code"] = metadata[i0:i1]
         
+        #No location flag
+        MFpifs = "Missing Float position interpolated for station(s):"
+        i0 = metadata.find(MFpifs) + len(MFpifs) + 1
+        i1 = metadata[i0:].find("\n") + i0
+        self.raw["Interpolated_Position"] = metadata[i0:i1]
+        
         ref_date_str = nfc["REFERENCE_DATE_TIME"][:].tostring().decode("ascii")
         ref_date = datetime.datetime.strptime(ref_date_str,"%Y%m%d%H%M%S")
         self.raw["date"] = nfc["JULD"][:] + ref_date.toordinal() 
@@ -255,6 +261,9 @@ class grids_one_buoy():
             T0 = self.raw["Temperature"][ii,i] # same, T0 is the temp sorted according to the argsort above (so orders the data for the shallowest to deepest value, then puts all the nans at the end
             msk = ~((T0.mask) | (z0.mask))
             self.gr["Temperature"][:,i] = grids_interpolates(z0[msk], T0[msk], self.gr["depth"], dz, grid = gridding)
+            # ^ gridding by: z0[msk] is only the depths where there is depth and temp data
+            # T0[msk] is only the temp entries where there is depth and temp data
+            # the depth grid matrix, and dz=5 = 5m
 
             #Pressure
             msk = ~((p0.mask) | (z0.mask))
@@ -792,9 +801,10 @@ def grids_interpolates(x0,y0,x,dx, grid = False):
         if np.sum(igood)>5:
             intt = intrp.interp1d( x[igood], y[igood], bounds_error = False)
             y[~igood] = intt(x[~igood])
-    elif np.sum(np.isfinite(y0))>5:
+    elif np.sum(np.isfinite(y0))>5: # this is the default. 
         intt = intrp.interp1d( x0, y0, bounds_error = False)
         y = intt(x)
+        #^ both lines needed for command. intt is an interpolation function returned by `interp1d`. so then y=intt(x) produces an array of the x0-y0 values interpolated over x!
     return y
 
 
